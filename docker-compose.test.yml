@@ -1,0 +1,30 @@
+version: '3'
+
+services:
+  app-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    volumes:
+      - ./cmd/auction/.env:/app/cmd/auction/.env
+    depends_on:
+      - mongodb-test
+    environment:
+      - AUCTION_INTERVAL=5s
+      - BATCH_INSERT_INTERVAL=2s
+      - MAX_BATCH_SIZE=2
+      - MONGODB_URL=mongodb://admin:admin@mongodb-test:27017/auctions_test?authSource=admin
+      - MONGODB_DB=auctions_test
+
+  mongodb-test:
+    image: mongo:6
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=admin
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongodb_test_data:/data/db
+
+volumes:
+  mongodb_test_data:

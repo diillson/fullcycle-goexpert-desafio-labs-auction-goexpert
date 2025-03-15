@@ -2,33 +2,38 @@ package auction
 
 import (
 	"context"
-	"fmt"
 	"fullcycle-auction_go/configuration/logger"
 	"fullcycle-auction_go/internal/entity/auction_entity"
 	"fullcycle-auction_go/internal/internal_error"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"time"
 )
 
+// FindAuctionById busca um leilão pelo ID
 func (ar *AuctionRepository) FindAuctionById(
 	ctx context.Context, id string) (*auction_entity.Auction, *internal_error.InternalError) {
 	filter := bson.M{"_id": id}
 
-	var auctionEntityMongo AuctionEntityMongo
-	if err := ar.Collection.FindOne(ctx, filter).Decode(&auctionEntityMongo); err != nil {
-		logger.Error(fmt.Sprintf("Error trying to find auction by id = %s", id), err)
-		return nil, internal_error.NewInternalServerError("Error trying to find auction by id")
+	var auctionMongo AuctionEntityMongo
+	err := ar.Collection.FindOne(ctx, filter).Decode(&auctionMongo)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, internal_error.NewNotFoundError("Auction not found")
+		}
+		logger.Error("Error finding auction by ID", err)
+		return nil, internal_error.NewInternalServerError("Error finding auction by ID")
 	}
 
 	return &auction_entity.Auction{
-		Id:          auctionEntityMongo.Id,
-		ProductName: auctionEntityMongo.ProductName,
-		Category:    auctionEntityMongo.Category,
-		Description: auctionEntityMongo.Description,
-		Condition:   auctionEntityMongo.Condition,
-		Status:      auctionEntityMongo.Status,
-		Timestamp:   time.Unix(auctionEntityMongo.Timestamp, 0),
+		Id:          auctionMongo.Id,
+		ProductName: auctionMongo.ProductName,
+		Category:    auctionMongo.Category,
+		Description: auctionMongo.Description,
+		Condition:   auctionMongo.Condition,
+		Status:      auctionMongo.Status,
+		Timestamp:   time.Unix(auctionMongo.Timestamp, 0),
 	}, nil
 }
 

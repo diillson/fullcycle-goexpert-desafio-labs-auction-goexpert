@@ -1,34 +1,26 @@
-version: '3.8'
+version: '3'
 
 services:
   app:
     build:
-      dockerfile: Dockerfile
       context: .
+      dockerfile: Dockerfile
     ports:
       - "8080:8080"
-    env_file:
-      - cmd/auction/.env
-    command: sh -c "/auction"
-    networks:
-      - localNetwork
+    volumes:
+      - ./cmd/auction/.env:/app/cmd/auction/.env
+    depends_on:
+      - mongodb
 
   mongodb:
-    image: mongo:latest
-    container_name: mongodb
+    image: mongo:6
     ports:
       - "27017:27017"
-    env_file:
-      - cmd/auction/.env
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=admin
     volumes:
-      - mongo-data:/data/db
-    networks:
-      - localNetwork
+      - mongodb_data:/data/db
 
 volumes:
-  mongo-data:
-    driver: local
-
-networks:
-  localNetwork:
-    driver: bridge
+  mongodb_data:
